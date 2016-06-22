@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# bin/compile <build-dir> <cache-dir>
+
+# fail fast
+set -e
+
+# debug
+# set -x
+
+# clean up leaking environment
+unset GIT_DIR
+
+# config
+STUNNEL_VERSION="5.32"
+
+# parse and derive params
+BUILD_DIR=$1
+CACHE_DIR=$2
+
+# vendor stunnel into the slug
+echo "-----> Fetching and vendoring stunnel into slug"
+echo "       Using stunnel version: ${STUNNEL_VERSION}"
+mkdir -p $BUILD_DIR/vendor/stunnel/var/run/stunnel/
+mkdir -p $CACHE_DIR/stunnel
+cd $CACHE_DIR/stunnel
+if [ ! -d "$CACHE_DIR/stunnel/stunnel-$STUNNEL_VERSION" ]; then
+    curl "https://www.stunnel.org/downloads/stunnel-$STUNNEL_VERSION.tar.gz" -s -o - | tar xzf -
+    cd stunnel-$STUNNEL_VERSION
+    ./configure --prefix=$BUILD_DIR/vendor/stunnel
+    make
+else
+    cd stunnel-$STUNNEL_VERSION
+fi
+make install > /dev/null
+mkdir -p $BUILD_DIR/.profile.d
+echo "PATH=$PATH:$HOME/vendor/stunnel/bin" > $BUILD_DIR/.profile.d/stunnel.sh
+
+echo "-----> Skipping the startup script"
+echo "-----> stunnel done"
+echo "!      The stunnel binary will be available at /app/vendor/stunnel/bin/stunnel."
+echo "!      Startup stunnel within your app using .profile or some other mechanism."
