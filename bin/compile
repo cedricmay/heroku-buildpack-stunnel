@@ -33,7 +33,7 @@ if [ ! -d "$CACHE_DIR/stunnel/stunnel-$STUNNEL_VERSION" ]; then
 else
     cd stunnel-$STUNNEL_VERSION
 fi
-make install > /dev/null
+make install # > /dev/null
 mkdir -p $BUILD_DIR/.profile.d
 echo "PATH=$PATH:$HOME/vendor/stunnel/bin" > $BUILD_DIR/.profile.d/stunnel.sh
 mkdir -p $BUILD_DIR/vendor/stunnel/etc/stunnel/ca
