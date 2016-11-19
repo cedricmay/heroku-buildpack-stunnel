@@ -31,7 +31,9 @@ if [ ! -d "$CACHE_DIR/stunnel/stunnel-$STUNNEL_VERSION" ]; then
     ./configure --prefix=$BUILD_DIR/vendor/stunnel
     make
 else
+    echo "Already stunnel cached!!!"
     cd stunnel-$STUNNEL_VERSION
+    ./configure --prefix=$BUILD_DIR/vendor/stunnel
 fi
 make install # > /dev/null
 mkdir -p $BUILD_DIR/.profile.d
