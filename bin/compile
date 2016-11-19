@@ -36,6 +36,8 @@ fi
 make install > /dev/null
 mkdir -p $BUILD_DIR/.profile.d
 echo "PATH=$PATH:$HOME/vendor/stunnel/bin" > $BUILD_DIR/.profile.d/stunnel.sh
+echo "$STUNNEL_CA_CERT" > $BUILD_DIR/vendor/stunnel/etc/stunnel/ca/ca.cert
+echo "$STUNNEL_SERVER_PEM" > $BUILD_DIR/vendor/stunnel/etc/stunnel/server_stunnel.pem
 
 
 echo "-----> Skipping the startup script"
