@@ -37,13 +37,15 @@ else
 fi
 make install # > /dev/null
 mkdir -p $BUILD_DIR/.profile.d
+mkdir -p $BUILD_DIR/vendor/stunnel/etc/stunnel/ca
+
+
 echo "PATH=$PATH:$HOME/vendor/stunnel/bin" > $BUILD_DIR/.profile.d/stunnel.sh
-echo 'echo "CA:" ' >> $BUILD_DIR/.profile.d/stunnel.sh
-echo 'echo "$STUNNEL_CA_CERT" ' >> $BUILD_DIR/.profile.d/stunnel.sh
 echo 'echo "$STUNNEL_CA_CERT" > /app/vendor/stunnel/etc/stunnel/ca/ca.cert' >> $BUILD_DIR/.profile.d/stunnel.sh
 echo 'echo "$STUNNEL_SERVER_PEM" > /app/vendor/stunnel/etc/stunnel/server_stunnel.pem' >> $BUILD_DIR/.profile.d/stunnel.sh
+echo '/app/vendor/stunnel/bin/stunnel ./stunnel.conf &' >> $BUILD_DIR/.profile.d/stunnel.sh
 
-mkdir -p $BUILD_DIR/vendor/stunnel/etc/stunnel/ca
+
 
 
 
