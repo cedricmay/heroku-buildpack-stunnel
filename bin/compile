@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# bin/compile <build-dir> <cache-dir>
+# bin/compile [--only-runscript] <build-dir> <cache-dir> [<config-dir>]
 
 # fail fast
 set -e
@@ -12,39 +12,81 @@ unset GIT_DIR
 
 # config
 STUNNEL_VERSION="5.37"
+LOG_LEVEL_DEFAULT=warning # see http://ftp.icm.edu.pl/packages/replay.old/ssl/stunnel/faq/args.html
 
 # parse and derive params
+[ "$1" = "--only-runscript" ] && ONLY_RUNSCRIPT='true' && shift
+[ -z "$1" ] && echo 'aborted: missing parameter: <build-dir>' && exit 1
 BUILD_DIR=$1
-CACHE_DIR=$2
+CACHE_DIR=${2:-/tmp}
+CONFIG_FILE=${3:-$(pwd)}/stunnel.conf
 
-# vendor stunnel into the slug
-echo "-----> Fetching and vendoring stunnel into slug"
-echo "       Using stunnel version: ${STUNNEL_VERSION}"
-mkdir -p $BUILD_DIR/vendor/stunnel/var/run/stunnel/
-mkdir -p $BUILD_DIR/vendor/stunnel/var/log/
-mkdir -p $CACHE_DIR/stunnel
+echo started with:\
+  ONLY_RUNSCRIPT: ${ONLY_RUNSCRIPT:-false},\
+  BUILD_DIR: $BUILD_DIR,\
+  CACHE_DIR: $CACHE_DIR,\
+  CONFIG_FILE: $CONFIG_FILE
 
-cd $CACHE_DIR/stunnel
-if [ ! -d "$CACHE_DIR/stunnel/stunnel-$STUNNEL_VERSION" ]; then
-    curl "ftp://ftp.stunnel.org/stunnel/archive/5.x//stunnel-$STUNNEL_VERSION.tar.gz" -s -o - | tar xzf -
-    cd stunnel-$STUNNEL_VERSION
-    ./configure --prefix=$BUILD_DIR/vendor/stunnel
-    make
+if [ -z $ONLY_RUNSCRIPT ]; then
+  echo foo
+  exit 1
+  # vendor stunnel into the slug
+  echo "-----> Fetching and vendoring stunnel into slug"
+  echo "       Using stunnel version: ${STUNNEL_VERSION}"
+  mkdir -p $BUILD_DIR/vendor/stunnel/var/run/stunnel/
+  mkdir -p $BUILD_DIR/vendor/stunnel/var/log/
+  mkdir -p $CACHE_DIR/stunnel
+
+  cd $CACHE_DIR/stunnel
+  if [ ! -d "$CACHE_DIR/stunnel/stunnel-$STUNNEL_VERSION" ]; then
+      curl "ftp://ftp.stunnel.org/stunnel/archive/5.x//stunnel-$STUNNEL_VERSION.tar.gz" -s -o - | tar xzf -
+      cd stunnel-$STUNNEL_VERSION
+      ./configure --prefix=$BUILD_DIR/vendor/stunnel
+      make
+  else
+      echo "Already stunnel cached!!!"
+      cd stunnel-$STUNNEL_VERSION
+      ./configure --prefix=$BUILD_DIR/vendor/stunnel
+  fi
+  make install # > /dev/null
 else
-    echo "Already stunnel cached!!!"
-    cd stunnel-$STUNNEL_VERSION
-    ./configure --prefix=$BUILD_DIR/vendor/stunnel
+  echo "stunnel was not installed"
 fi
-make install # > /dev/null
-mkdir -p $BUILD_DIR/.profile.d
-mkdir -p $BUILD_DIR/vendor/stunnel/etc/stunnel/ca
 
+mkdir -p $BUILD_DIR/vendor/stunnel/etc/stunnel/ca
+mkdir -p $BUILD_DIR/.profile.d
 
 echo "PATH=$PATH:$HOME/vendor/stunnel/bin" > $BUILD_DIR/.profile.d/stunnel.sh
 echo 'echo "$STUNNEL_CA_CERT" > /app/vendor/stunnel/etc/stunnel/ca/ca.cert' >> $BUILD_DIR/.profile.d/stunnel.sh
 echo 'echo "$STUNNEL_CLIENT_PEM" > /app/vendor/stunnel/etc/stunnel/client.pem' >> $BUILD_DIR/.profile.d/stunnel.sh
-echo 'echo "connect = $STUNNEL_CONNECT" >> ./stunnel.conf' >> $BUILD_DIR/.profile.d/stunnel.sh
-echo '/app/vendor/stunnel/bin/stunnel ./stunnel.conf &' >> $BUILD_DIR/.profile.d/stunnel.sh
+echo 'echo "connect = $STUNNEL_CONNECT" >> '$CONFIG_FILE >> $BUILD_DIR/.profile.d/stunnel.sh
+echo '/app/vendor/stunnel/bin/stunnel '$CONFIG_FILE' &' >> $BUILD_DIR/.profile.d/stunnel.sh
+
+# don't forget to escape $ if U want his effect during runtime of stunnel.sh (i.e. environment setting)
+cat <<EOF > $BUILD_DIR/.profile.d/stunnel.sh1
+# set -x
+PATH="$PATH:$HOME/vendor/stunnel/bin"
+echo "\$STUNNEL_CA_CERT" > /app/vendor/stunnel/etc/stunnel/ca/ca.cert
+echo "\$STUNNEL_CLIENT_PEM" > /app/vendor/stunnel/etc/stunnel/client.pem
+
+echo "# following line(s) inserted due compile
+connect = \$STUNNEL_CONNECT" >> $CONFIG_FILE
+
+LOG_LEVEL_MESSAGE='You can use STUNNEL_LOG_LEVEL envvar to set debug level for runtime'
+HAS_LOG_LEVEL=\$(grep '^[ ]*debug' $CONFIG_FILE && 'true' || '')
+
+if [ ! -z \$STUNNEL_LOG_LEVEL ]; then # envvar given
+  [ ! -z HAS_LOG_LEVEL ] && ed -s $CONFIG_FILE <<<$',s/^[ ]*debug[ ]*=.*$/# & # remarked due compile/\nw'
+  echo debug = \$STUNNEL_LOG_LEVEL >> $CONFIG_FILE
+else
+  echo \$LOG_LEVEL_MESSAGE
+  echo "# \$LOG_LEVEL_MESSAGE" >> $CONFIG_FILE
+  [ -z HAS_LOG_LEVEL ] && echo debug = \$LOG_LEVEL_DEFAULT >> CONFIG_FILE
+fi
+
+# /app/vendor/stunnel/bin/stunnel $CONFIG_FILE &
+EOF
+
 
 
 
