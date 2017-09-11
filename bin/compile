@@ -56,32 +56,30 @@ fi
 mkdir -p $BUILD_DIR/vendor/stunnel/etc/stunnel/ca
 mkdir -p $BUILD_DIR/.profile.d
 
-echo "PATH=$PATH:$HOME/vendor/stunnel/bin" > $BUILD_DIR/.profile.d/stunnel.sh
-echo 'echo "$STUNNEL_CA_CERT" > /app/vendor/stunnel/etc/stunnel/ca/ca.cert' >> $BUILD_DIR/.profile.d/stunnel.sh
-echo 'echo "$STUNNEL_CLIENT_PEM" > /app/vendor/stunnel/etc/stunnel/client.pem' >> $BUILD_DIR/.profile.d/stunnel.sh
-echo 'echo "connect = $STUNNEL_CONNECT" >> '$CONFIG_FILE >> $BUILD_DIR/.profile.d/stunnel.sh
-echo '/app/vendor/stunnel/bin/stunnel '$CONFIG_FILE' &' >> $BUILD_DIR/.profile.d/stunnel.sh
-
 # don't forget to escape $ if U want his effect during runtime of stunnel.sh (i.e. environment setting)
-cat <<EOF > $BUILD_DIR/.profile.d/stunnel.sh1
+cat <<EOF > $BUILD_DIR/.profile.d/stunnel.sh
 # set -x
 PATH="$PATH:$HOME/vendor/stunnel/bin"
+
+LOG_LEVEL_DEFAULT="$LOG_LEVEL_DEFAULT"
+
 echo "\$STUNNEL_CA_CERT" > /app/vendor/stunnel/etc/stunnel/ca/ca.cert
 echo "\$STUNNEL_CLIENT_PEM" > /app/vendor/stunnel/etc/stunnel/client.pem
 
-echo "# following line(s) inserted due compile
+# echo writes more lines :)
+echo "
+# following line(s) inserted due to compile
 connect = \$STUNNEL_CONNECT" >> $CONFIG_FILE
 
 LOG_LEVEL_MESSAGE='You can use STUNNEL_LOG_LEVEL envvar to set debug level for runtime'
-HAS_LOG_LEVEL=\$(grep '^[ ]*debug' $CONFIG_FILE && 'true' || '')
+HAS_LOG_LEVEL=\$(grep '^[ ]*debug' $CONFIG_FILE)
 
 if [ ! -z \$STUNNEL_LOG_LEVEL ]; then # envvar given
-  [ ! -z HAS_LOG_LEVEL ] && ed -s $CONFIG_FILE <<<$',s/^[ ]*debug[ ]*=.*$/# & # remarked due compile/\nw'
+  [ ! -z "\$HAS_LOG_LEVEL" ] && ed -s $CONFIG_FILE <<<$',s/^[ ]*debug[ ]*=.*$/# & # remarked due to compile/\nw'
   echo debug = \$STUNNEL_LOG_LEVEL >> $CONFIG_FILE
 else
   echo \$LOG_LEVEL_MESSAGE
-  echo "# \$LOG_LEVEL_MESSAGE" >> $CONFIG_FILE
-  [ -z HAS_LOG_LEVEL ] && echo debug = \$LOG_LEVEL_DEFAULT >> CONFIG_FILE
+  [ -z "\$HAS_LOG_LEVEL" ] && echo debug = \$LOG_LEVEL_DEFAULT >> $CONFIG_FILE
 fi
 
 # /app/vendor/stunnel/bin/stunnel $CONFIG_FILE &
