@@ -28,8 +28,6 @@ echo started with:\
   CONFIG_FILE: $CONFIG_FILE
 
 if [ -z $ONLY_RUNSCRIPT ]; then
-  echo foo
-  exit 1
   # vendor stunnel into the slug
   echo "-----> Fetching and vendoring stunnel into slug"
   echo "       Using stunnel version: ${STUNNEL_VERSION}"
