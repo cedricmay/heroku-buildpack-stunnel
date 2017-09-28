@@ -21,6 +21,7 @@ BUILD_DIR=$1
 CACHE_DIR=${2:-/tmp}
 CONFIG_FILE=${3:-.}/stunnel.conf
 
+echo script started with $*
 echo started with:\
   ONLY_RUNSCRIPT: ${ONLY_RUNSCRIPT:-false},\
   BUILD_DIR: $BUILD_DIR,\
