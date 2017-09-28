@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
-# bin/compile [--only-runscript] <build-dir> <cache-dir> [<config-dir>]
+# bin/compile [--only-runscript] <build-dir> <cache-dir> <some-dir> [<config-dir>]
+
+echo script started in__ $(pwd)
+echo script started with $*
 
 # fail fast
 set -e
@@ -19,9 +22,8 @@ LOG_LEVEL_DEFAULT=warning # see http://ftp.icm.edu.pl/packages/replay.old/ssl/st
 [ -z "$1" ] && echo 'aborted: missing parameter: <build-dir>' && exit 1
 BUILD_DIR=$1
 CACHE_DIR=${2:-/tmp}
-CONFIG_FILE=${3:-.}/stunnel.conf
+CONFIG_FILE=${4:-.}/stunnel.conf
 
-echo script started with $*
 echo started with:\
   ONLY_RUNSCRIPT: ${ONLY_RUNSCRIPT:-false},\
   BUILD_DIR: $BUILD_DIR,\
