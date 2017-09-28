@@ -22,7 +22,7 @@ LOG_LEVEL_DEFAULT=warning # see http://ftp.icm.edu.pl/packages/replay.old/ssl/st
 [ -z "$1" ] && echo 'aborted: missing parameter: <build-dir>' && exit 1
 BUILD_DIR=$1
 CACHE_DIR=${2:-/tmp}
-CONFIG_FILE=${4:-.}/stunnel.conf
+CONFIG_FILE=${4:-$(pwd)}/stunnel.conf
 
 echo started with:\
   ONLY_RUNSCRIPT: ${ONLY_RUNSCRIPT:-false},\
@@ -83,7 +83,7 @@ else
   [ -z "\$HAS_LOG_LEVEL" ] && echo debug = \$LOG_LEVEL_DEFAULT >> $CONFIG_FILE
 fi
 
-# /app/vendor/stunnel/bin/stunnel $CONFIG_FILE &
+/app/vendor/stunnel/bin/stunnel $CONFIG_FILE &
 EOF
 
 
